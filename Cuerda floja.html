@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es">
+    <head>
+		<title>Cuerda Floja</title>
+		<meta charset="UTF-8">
+		<link rel="icon" href="./logoBLR.png" type="image/icon type">
+		<link rel="stylesheet" href="./styles.css"><!-- 
+		<link rel="preload" href="./fonts/Inter.var.woff2" as="font" type="font/woff2" crossorigin> -->
+	</head>
+    <body>
+        <h1 style ="text-align: center">Práctica Dedsafío 3: Cuerda Floja</h1>
+        <p class="indented bold">R para reiniciar</p>
+        <div class="main">
+            <div class="image-container">
+                <img class="imagen" src="Tecla.png" alt="Tecla" id="img-tecla">
+                <img class="imagen" src="comillas.png" alt="Comillas" id="img-comillas" hidden>
+            </div>
+            <div class="barra-fondo" id="barra-fondo">
+                <div class="barra-movil" id="barra-movil"></div>
+                <div class="barra-target" id="barra-target"></div>
+            </div>
+
+            <div class="barra-fondo tiempo">
+                <div class="barra-tiempo" id="barra-tiempo"></div>
+            </div>
+        </div>
+        <script>
+            "use strict"
+            const barraFondo = document.getElementById("barra-fondo");
+            const pointer = document.getElementById("barra-movil");
+            const target = document.getElementById("barra-target");
+            const barraHp = document.getElementById("barra-tiempo");
+            const imgTargetKey = document.getElementById("img-tecla");
+            const imgComillas = document.getElementById("img-comillas");
+
+            const keys = ["Space", "KeyW", "KeyA", "KeyS", "KeyD"];
+            const resetKey = "KeyR";
+            let targetKey = null;
+            let pointerLeftPos = null;
+            let hp = null;
+
+            let pointerSpeed = 0.013;
+            let hpLossSpeed = 0.3;
+            let hpGain = 30;
+            let hpLoss = 20;
+
+            let animationId = null;
+            //Makes these properties available
+            pointer.style.left = "0";
+            target.style.left = "0";
+
+            startGame();
+
+
+            function startGame() {
+                hp = 100;
+                pointerLeftPos = 0;
+                moveTarget();
+                changeTargetKey();
+                window.addEventListener("keydown", tryHit);
+                const id = requestAnimationFrame(animationStep);
+            }
+
+            function moveTarget() {
+                const trackLength = barraFondo.clientWidth - target.clientWidth;
+                const newTargetLeftPos = Math.random() * trackLength;
+
+                target.style.left = `${newTargetLeftPos}px`;
+            }
+
+            function changeTargetKey() {
+                targetKey = keys[Math.floor(Math.random() * keys.length)];
+                imgTargetKey.src = targetKey + ".png";
+            }
+
+            function tryHit(ev) {
+                if (ev.code === targetKey && checkHit()) {
+                    performGoodHit();
+                    return;
+                }
+                performBadHit();
+            }
+
+            function checkHit() {
+                const currentPosLeft = parseFloat(pointer.style.left);
+                const currentPosRight = currentPosLeft + parseFloat(pointer.offsetWidth);
+
+                const targetPosLeft = parseFloat(target.style.left);
+                const targetPosRight = targetPosLeft + parseFloat(target.offsetWidth);
+
+                //console.log(currentPosLeft, targetPosLeft, currentPosRight, targetPosRight)
+                //loseGame()
+                return currentPosLeft >= targetPosLeft && currentPosRight <= targetPosRight;
+            }
+
+            function performGoodHit() {
+                hp = Math.min(hp + hpGain, 100);
+                changeTargetKey();
+                moveTarget();
+            }
+            function performBadHit() {
+                moveTarget();
+                hp = Math.max(hp - hpLoss, 0);
+            }
+
+            function animationStep() {
+
+                const trackLength = barraFondo.clientWidth - pointer.clientWidth;
+                const x = pingPong(pointerLeftPos, trackLength);
+                pointer.style.left = `${x}px`;
+                pointerLeftPos += pointerSpeed * trackLength;
+
+                hp = Math.max(hp - hpLossSpeed, 0);
+                barraHp.style.width = `${hp}%`;
+
+                if (hp <= 0) {
+                    loseGame();
+                    return;
+                }
+
+                animationId = requestAnimationFrame(animationStep);
+            }
+
+            function pingPong(a, b) {
+                if (b == 0) return 0;
+                return Math.abs(fract( (a-b) / (2*b) ) * b * 2 - b);
+            }
+
+            function fract(x) {
+                return x - Math.floor(x);
+            }
+
+            function loseGame() {
+                window.removeEventListener("keydown", tryHit);
+                window.addEventListener("keydown", resetListener);
+                cancelAnimationFrame(animationId);
+            }
+
+            function resetListener(ev) {
+                if (ev.code == resetKey) {
+                    startGame();
+                    window.removeEventListener("keydown", resetListener);
+                }
+            }
+
+        </script>
+        
+    </body>
+</html>
